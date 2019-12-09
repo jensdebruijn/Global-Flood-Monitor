@@ -2,7 +2,7 @@
 Early event detection and response can significantly reduce the societal impact of floods. Currently, early warning systems rely on gauges, radar data, models and informal local sources. However, the scope and reliability of these systems are limited. Recently, the use of social media for detecting disasters has shown promising results, especially for earthquakes. Here, we present a new database for detecting floods in real-time on a global scale using Twitter. The method was developed using 88 million tweets, from which we derived over 10.000 flood events (i.e., flooding occurring in a country or first order administrative subdivision) across 176 countries in 11 languages in just over four years. Using strict parameters, validation shows that approximately 90% of the events were correctly detected. In countries where the first official language is included, our algorithm detected 63% of events in NatCatSERVICE disaster database at admin 1 level. Moreover, a large number of flood events not included in NatCatSERVICE are detected. All results are publicly available on www.globalfloodmonitor.org.
 
 ## Cite as
-<< citation >>
+Bruijn, J.A., Moel, H., Jongman, B. et al. A global database of historic and real-time flood events based on social media. Sci Data 6, 311 (2019) doi:10.1038/s41597-019-0326-9
 
 ## Links
  - [Flood Tweet IDs (multilingual)](https://doi.org/10.7910/DVN/T3ZFMR)
