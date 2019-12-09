@@ -1,0 +1,13 @@
+pandas
+elasticsearch
+psycopg2
+numpy
+dill
+TwitterAPI
+tensorflow
+transformers
+scikit-learn
+keras-radam
+pytz
+gdal
+nltk

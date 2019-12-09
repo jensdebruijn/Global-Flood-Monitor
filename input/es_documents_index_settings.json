@@ -1,0 +1,151 @@
+{
+  "settings": {
+    "index": {
+      "sort.field": [
+        "date"
+      ],
+      "sort.order": [
+        "asc"
+      ]
+    }
+  },
+  "mappings": {
+    "_doc": {
+      "dynamic": "strict",
+      "properties": {
+        "id": {
+          "type": "keyword",
+          "index": false,
+          "doc_values": false
+        },
+        "id_old": {
+          "type": "keyword",
+          "index": true,
+          "doc_values": false
+        },
+        "date": {
+          "type": "date"
+        },
+        "text": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 280
+            }
+          }
+        },
+        "media": {
+          "type": "keyword",
+          "index": "false"
+        },
+        "event_related": {
+          "type": "boolean"
+        },
+        "label": {
+          "type": "boolean"
+        },
+        "source": {
+          "properties": {
+            "type": {
+              "type": "keyword"
+            },
+            "retweet": {
+              "type": "boolean"
+            },
+            "bbox": {
+              "type": "float"
+            },
+            "coordinates": {
+              "type": "geo_point"
+            },
+            "lang": {
+              "type": "keyword"
+            },
+            "url": {
+              "type": "keyword",
+              "index": "false"
+            },
+            "author": {
+              "properties": {
+                "id": {
+                  "type": "long",
+                  "index": "true"
+                },
+                "location": {
+                  "type": "text",
+                  "index": "false",
+                  "fields": {
+                    "keyword": {
+                      "type": "keyword",
+                      "ignore_above": 256
+                    }
+                  }
+                },
+                "timezone": {
+                  "type": "keyword"
+                }
+              }
+            }
+          }
+        },
+        "scores": {
+          "properties": {
+            "class": {
+              "type": "keyword"
+            }
+          }
+        },
+        "locations": {
+          "properties": {
+            "additional_relations": {
+              "type": "keyword"
+            },
+            "subbasin_ids_6": {
+              "type": "keyword"
+            },
+            "subbasin_ids_8": {
+              "type": "keyword"
+            },
+            "subbasin_ids_9": {
+              "type": "keyword"
+            },
+            "subbasin_ids_10": {
+              "type": "keyword"
+            },
+            "subbasin_ids_11": {
+              "type": "keyword"
+            },
+            "subbasin_ids_12": {
+              "type": "keyword"
+            },
+            "coordinates": {
+              "type": "float"
+            },
+            "level_0_region": {
+              "type": "keyword"
+            },
+            "level_1_region": {
+              "type": "keyword"
+            },
+            "location_ID": {
+              "type": "keyword"
+            },
+            "score": {
+              "type": "half_float"
+            },
+            "toponym": {
+              "type": "keyword"
+            },
+            "translations": {
+              "type": "integer"
+            },
+            "type": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}
