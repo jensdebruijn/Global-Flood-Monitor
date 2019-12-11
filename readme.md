@@ -23,7 +23,7 @@ Bruijn, J.A., Moel, H., Jongman, B. et al. A global database of historic and rea
 3. Creating the text classifier
     - Hydrate the labelled data (*input/labeled_tweets.xlsx*) by running `hydrate.py`. This creates a new file with additional data obtained from the Twitter API (including the tweets' texts in `input/labeld_tweets_hydrated.xlsx`). Don't forget to set the Twitter developer tokens in `config.py`
     - Train the classifier by running `train_text_classifier.py`. This file exports the trained classifier to *input/classifier*.
-4. Creating the timezone database
+4. Finding time corrections per region
     - In the next step we need to run just the localization algorithm [TAGGS](https://github.com/jensdebruijn/TAGGS) so that we can derive the number of localized tweets per hour of the day (see paper). To do so we run the main file `main.py`, with detection set to false, like so: `main.py --detection false`
     - Run `get_time_correction.py`. This will create a new file `input/time_correction.json`.
 5. Run the Global Flood Monitor
