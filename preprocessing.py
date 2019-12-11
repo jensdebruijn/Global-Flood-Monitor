@@ -345,7 +345,7 @@ class Preprocess():
                 with ZipFile(file_path, 'r') as zf:
                     zf.extractall(folder)
 
-    def parse_geonames_table(self, file_path, column_names, columns_out, dtypes=None, nrows=None):
+    def parse_geonames_table(self, file_path, column_names, columns_out, dtypes=None, nrows=None, skiprows=0):
         """This function parses a geonames table and retuns it as a pandas dataframe"""
         file_path = os.path.join('input', 'geonames', file_path)
         df = pd.read_csv(
@@ -359,7 +359,8 @@ class Preprocess():
             na_values=["", "#N/A", "#N/A N/A", "#NA", "-1.#IND", "-1.#QNAN", "-NaN", "-nan", "1.#IND", "1.#QNAN", "N/A", "NULL", "NaN", "nan"],
             quoting=csv.QUOTE_NONE,
             usecols=columns_out,
-            nrows=nrows
+            nrows=nrows,
+            skiprows=skiprows
         )
         return df[columns_out]
 

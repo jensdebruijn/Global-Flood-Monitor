@@ -11,7 +11,6 @@ EventDetectionData = namedtuple(
     [
         'first_doc',
         'latest_doc',
-        'location_scores',
         'childs'
     ]
 )
@@ -45,8 +44,6 @@ class Detector:
         self.factor = setting.factor
         self.fraction = .05
         self.base = setting.base + 1
-        self.doc_scores = setting.doc_scores
-        self.location_scores = setting.location_scores
         self.max_limit = 3 * 24 * 3600
         self.start_date_full_day = round_up_to_full_day(start).date()
         self.spinup_time = spinup_time
@@ -328,7 +325,6 @@ class Detector:
         return detection_data_array, EventDetectionData(
             first_doc=first_doc_date,
             latest_doc=detection_data_array[-1].data_point.date,
-            location_scores=None,
             childs=childs
         )
 
@@ -377,32 +373,3 @@ class Detector:
             del self.last_authors_s
         if hasattr(self, 'local_array_s'):
             del self.local_array_s
-
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, figsize=(5, 5))
-    plt.tight_layout(pad=1.5)
-    for factor in [9, 5, 1]:
-        detector = Detector(
-            'test',
-            start=datetime(2014, 7, 30),
-            factor=factor,
-            fraction=1,
-            location_scores='extval',
-            time_correction=1,
-            base=1
-        )
-        x, y = [], []
-        for i in range(0, 500000, 1000):
-            x.append(i)
-            y.append(math.floor(detector.local_array_size_formula(i)))
-        ax.plot(x, y, label=factor)
-    ax.set_ylim([0, 12])
-    ax.set_xlim([-100, x[-1]])
-    ax.set_xlabel(r'Expected corrected time (Δ$t_{ce}$)')
-    ax.set_ylabel('Size local array')
-    plt.legend(title='factor', borderpad=.5)
-    # plt.savefig('factor.png')
-    # plt.savefig('factor.eps')
-    plt.show()

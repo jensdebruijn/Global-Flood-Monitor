@@ -37,7 +37,7 @@ class EventDetector:
         self.es = es
         self.region_type = regions
 
-        # (sensitivity, threshold, location_scores)
+        # (sensitivity, threshold)
         self.detection_parameters = detection_parameters
         self.flood_tracker = {
             setting: {}
@@ -66,7 +66,6 @@ class EventDetector:
                     detection_time TIMESTAMP,
                     first_doc TIMESTAMP,
                     latest_doc TIMESTAMP,
-                    location_scores TEXT[],
                     childs jsonb
                 )
             """, (AsIs(setting.run_name), ))
@@ -190,7 +189,6 @@ class EventDetector:
                             flood_data['latest_doc'],
                             flood_data['first_doc'],
                             flood_data['latest_doc'],
-                            list(flood_data['location_scores']) if flood_data['location_scores'] is not None else None,
                             json.dumps(childs)
                         ))
 
@@ -201,13 +199,12 @@ class EventDetector:
                             detection_time,
                             first_doc,
                             latest_doc,
-                            location_scores,
                             childs
                         )
                         VALUES {{}}
                         RETURNING location_ID, {setting.run_name}.event_id
                         """
-                    self.pg.do_query(query, "(%s, %s, %s, %s, %s, %s)", new_events)
+                    self.pg.do_query(query, "(%s, %s, %s, %s, %s)", new_events)
                     res = self.pg.cur.fetchall()
 
                 self.pg.conn.commit()
@@ -292,14 +289,12 @@ class EventDetector:
                 'first_doc': flood_data.first_doc,
                 'latest_doc': flood_data.latest_doc,
                 'detection_time': flood_data.latest_doc,
-                'location_scores': flood_data.location_scores,
                 'childs': flood_data.childs
             }
         else:
             self.flood_tracker[setting][location_ID]['latest_doc'] = \
                 flood_data.latest_doc
             self.flood_tracker[setting][location_ID]['childs'].extend(flood_data.childs)
-            self.flood_tracker[setting][location_ID]['location_scores']
 
     def find_datapoints(
         self,

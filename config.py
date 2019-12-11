@@ -5,15 +5,12 @@ START_DATE = datetime(2014, 7, 30)
 
 
 PG_DB = 'gfm'
-DOCUMENT_INDEX = 'gfm'
 POSTGRESQL_HOST = '127.0.0.1'
-# POSTGRESQL_HOST = '145.108.190.209'
-if POSTGRESQL_HOST != '127.0.0.1':
-    print(f"Using {POSTGRESQL_HOST} as PostgreSQL host")
 POSTGRESQL_PORT = 5432
 POSTGRESQL_USER = 'postgres'
 POSTGRESQL_PASSWORD = None
 
+DOCUMENT_INDEX = 'gfm'
 ELASTIC_HOST = '127.0.0.1'
 ELASTIC_PORT = 9200
 ELASTIC_USER = False
@@ -47,9 +44,7 @@ DetectorSetting = namedtuple('setting', [
     'location_threshold',
     'factor',
     'fraction',
-    'base',
-    'doc_scores',
-    'location_scores',
+    'base'
 ])
 
 
@@ -58,27 +53,21 @@ DETECTION_PARAMETERS = [
         run_name="floods_sensitive",
         location_threshold=.2,
         factor=7,
-        fraction=.3,
-        base=1,
-        doc_scores=False,
-        location_scores=False,
+        fraction=0.05,
+        base=1
     ),
     DetectorSetting(
         run_name="floods_balanced",
         location_threshold=.2,
         factor=7,
-        fraction=.3,
+        fraction=0.05,
         base=2,
-        doc_scores=False,
-        location_scores=False,
     ),
     DetectorSetting(
         run_name="floods_strict",
         location_threshold=.2,
         factor=7,
-        fraction=.3,
+        fraction=0.05,
         base=3,
-        doc_scores=False,
-        location_scores=False,
     ),
 ]
