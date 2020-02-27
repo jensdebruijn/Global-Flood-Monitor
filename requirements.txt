@@ -4,10 +4,12 @@ psycopg2
 numpy
 dill
 TwitterAPI
-tensorflow
+tensorflow-gpu
 transformers
 scikit-learn
 keras-radam
 pytz
 gdal
 nltk
+geopy
+xlrd

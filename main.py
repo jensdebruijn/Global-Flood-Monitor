@@ -160,7 +160,7 @@ class Detection(Geoparser):
             self.event_detector.detect_events_l(documents, is_real_time=mp.Value(c_bool, False), convert_to_named_tuple=True)
         print("Finished initial detection")
 
-    def __call__(
+    def run(
         self,
         start,
         spinup_time,
@@ -169,6 +169,7 @@ class Detection(Geoparser):
         detection_parameters,
         regions,
         real_time,
+        max_n_docs_in_memory=None,
         check_previous_docs=True,
         geoparsing_start=False,
         update_locations=True,
@@ -320,6 +321,11 @@ class Detection(Geoparser):
             )
             
             self.docs.update(dict(about_ongoing_event_docs))
+            if max_n_docs_in_memory is not None and len(self.docs) > max_n_docs_in_memory:
+                n_docs_to_delete = len(self.docs) - max_n_docs_in_memory
+                IDs_to_remove = list(self.docs.keys())[:n_docs_to_delete]
+                for ID in IDs_to_remove:
+                    del self.docs[ID]
 
             event_1.clear()
             event_2.set()
@@ -396,7 +402,7 @@ def main():
 
     event_detector.maybe_set_table_name(args.regions, DETECTION_PARAMETERS)
 
-    event_detector(
+    event_detector.run(
         detection=args.detection,
         start=START_DATE,
         spinup_time=SPINUP_TIME,
@@ -408,6 +414,7 @@ def main():
         load_detectors=args.load_detectors,
         regions=args.regions,
         real_time=args.real_time,
+        max_n_docs_in_memory=args.max_n_docs_in_memory
     )
 
 
@@ -423,6 +430,7 @@ if __name__ == '__main__':
     parser.add_argument('-dl', '--doc_loader', type=str, default=None)
     parser.add_argument('-cp', '--check-previous-documents', type=parse_bool, default=True)
     parser.add_argument('-mde', '--max-distance-entities-doc', type=int, default=200_000)
+    parser.add_argument('-mdm', '--max-n-docs-in-memory', type=int, default=None)
 
     args = parser.parse_args()
 

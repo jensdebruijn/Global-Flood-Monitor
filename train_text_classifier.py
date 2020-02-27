@@ -1,6 +1,5 @@
 import shutil
 import tensorflow as tf
-import tensorflow_datasets
 from transformers import BertTokenizer
 import os
 import pandas as pd
