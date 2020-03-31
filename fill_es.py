@@ -24,8 +24,10 @@ class Fill:
 
     def generate_tweets(self, fp, start=datetime(1970, 1, 1)):
         with open(fp, 'rb') as f:
-            for tweet in f.readlines():
-                tweet = tweet.strip()
+            for line in f.readlines():
+                if line.startswith('#'):
+                    continue
+                tweet = line.strip()
                 try:
                     tweet = json.loads(tweet)
                 except json.decoder.JSONDecodeError:
@@ -68,4 +70,4 @@ class Fill:
 
 if __name__ == '__main__':
     filler = Fill()
-    filler('input/201409070000.jsonl')
+    filler('input/example.jsonl')

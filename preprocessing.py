@@ -43,7 +43,6 @@ es = Elastic()
 class Preprocess():
     def __init__(self):
         self.level_0_codes = self._load_region_codes(0)
-        self.level_1_codes = self._load_region_codes(1)
 
     def _load_region_codes(self, level):
         gdf = gpd.GeoDataFrame.from_file(os.path.join('input', 'regions', f'level{level}.shp'))
@@ -185,10 +184,6 @@ class Preprocess():
             # Check if the index exists. If it does not exist, the database is emtpy and we need to
             # index all toponyms. Otherwise we first query the database to find all toponyms
             # already indexed and only index the toponyms not yet indexed.
-            LEVEL_2_COUNTRIES = (
-                'g-2635167',
-                'g-1227603'
-            )
 
             n_toponyms = len(toponyms)
             for i, name in enumerate(toponyms, start=1):
@@ -802,7 +797,7 @@ class Preprocess():
                 )
             """)
             with open(
-                os.path.join(BASE_PATH, 'input/maps/time_zones/tz_names.csv'),
+                'input/maps/time_zones/tz_names.csv',
                 'r'
             ) as f:
                 reader = csv.reader(f)
@@ -949,7 +944,6 @@ class Preprocess():
 
 def run():
     p = Preprocess()
-    p.load_region_geoms()
     p.create_continent_table()
     p.create_country_table()
     p.get_most_common_words()

@@ -18,7 +18,7 @@ Bruijn, J.A., Moel, H., Jongman, B. et al. A global database of historic and rea
     - Obtain shapefiles for countries (`input/regions/level0.shp`) and first order administrative subdivisions (`input/regions/level0.shp`). The column 'ID' should be the geonames ID prefixed with 'g-' (e.g., `g-2750405` for the Netherlands).
     - Set all parameters in `config.py`
     - Create elasticsearch index for tweets using create_index.py. This file automatically uses the proper index settings (see `input/es_document_index_settings.json`).
-    - Fill index with tweets (example for reading tweets from jsonlines to database in `fill_es.py`).
+    - Fill index with tweets (example for reading tweets from jsonlines to database in `fill_es.py`). This assumes the file `input/example.jsonl` has a new json-object obtained from the Twitter API on each line.
     - Run `preprocessing.py`
 3. Creating the text classifier
     - Hydrate the labelled data (*input/labeled_tweets.xlsx*) by running `hydrate.py`. This creates a new file with additional data obtained from the Twitter API (including the tweets' texts in `input/labeld_tweets_hydrated.xlsx`). Don't forget to set the Twitter developer tokens in `config.py`
