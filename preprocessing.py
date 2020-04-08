@@ -42,19 +42,11 @@ es = Elastic()
 
 class Preprocess():
     def __init__(self):
-        self.level_0_codes = self._load_region_codes(0)
+        self.level_0_codes = self._load_level_0_codes()
 
-    def _load_region_codes(self, level):
-        gdf = gpd.GeoDataFrame.from_file(os.path.join('input', 'regions', f'level{level}.shp'))
-        return set(gdf['ID'])
-
-    def load_region_geoms(self):
-        region_geoms = {}
-        for level in (0, 1):
-            gdf = gpd.GeoDataFrame.from_file(os.path.join('input', 'regions', f'level{level}.shp')).set_index("ID")
-            for ID, row in gdf.iterrows():
-                region_geoms[ID] = row['geometry'].wkt
-        return region_geoms
+    def _load_level_0_codes(self):
+        gdf = gpd.GeoDataFrame.from_file(os.path.join('input', 'maps', 'level0.json'))
+        return set(['g-' + geonameid for geonameid in gdf['geoNameId']])
 
     def get_location_type(
         self,
@@ -692,7 +684,15 @@ class Preprocess():
             geonames_features['full_name'] = geonames_features['name']
             geonames_features['name'] = geonames_features.name.str.lower()
 
-            region_geoms = self.load_region_geoms()
+            def load_region_geoms():
+                region_geoms = {}
+                for level in (0, 1):
+                    gdf = gpd.GeoDataFrame.from_file(os.path.join('input', 'maps', f'level{level}.json')).set_index("geoNameId")
+                    for ID, row in gdf.iterrows():
+                        region_geoms['g-' + ID] = row['geometry'].wkt
+                return region_geoms
+
+            region_geoms = load_region_geoms()
 
             def create_geom(row, region_geoms):
                 try:

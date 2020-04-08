@@ -16,7 +16,6 @@ Bruijn, J.A., Moel, H., Jongman, B. et al. A global database of historic and rea
     - Set all parameters in `config.py`. This includes the `TWITTER_CONSUMER_KEY`, `TWITTER_CONSUMER_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET` for which you will need to register as [Twitter developer](https://developer.twitter.com/).
 2. Preparing data & preprocessing
     - Obtain a high-resolution population raster (e.g., [LandScan Global](https://landscan.ornl.gov/)), convert to GeoTIFF (e.g., `gdal_translate w001001.adf population.tif -co "COMPRESS=LZW"`) and place in `input/maps/population.tif`.
-    - Obtain shapefiles for countries (`input/regions/level0.shp`) and first order administrative subdivisions (`input/regions/level0.shp`). The column 'ID' should be the geonames ID prefixed with 'g-' (e.g., `g-2750405` for the Netherlands).
     - Set all parameters in `config.py`
     - Create elasticsearch index for tweets using create_index.py. This file automatically uses the proper index settings (see `input/es_document_index_settings.json`).
     - Fill index with tweets (example for reading tweets from jsonlines to database in `fill_es.py`). This assumes the file `input/example.jsonl` has a new json-object obtained from the Twitter API on each line.

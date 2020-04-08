@@ -1,0 +1,1 @@
+Both level0.json and level1.json are obtained from www.geonames.org.
