@@ -25,7 +25,7 @@ class Predictor:
         dataset = dataset.batch(CLASSIFIER_BATCH_SIZE)
         logits = self.model.predict(dataset)
         predictions = np.round(tf.math.sigmoid(logits))
-        predictions = predictions[:, 0].astype(np.int32).tolist()
+        predictions = predictions[0, :, 0].astype(np.int32).tolist()
         predictions = [CLASSIFIER_LABELS[i] for i in predictions]
         if return_as_list:
             return predictions

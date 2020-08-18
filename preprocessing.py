@@ -287,7 +287,6 @@ class Preprocess():
                             '_index': "locations",
                             '_id': name,
                             '_op_type': 'index',
-                            '_type': '_doc'
                         }
                         yield body
 
@@ -350,12 +349,6 @@ class Preprocess():
             skiprows=skiprows
         )
         return df[columns_out]
-
-    def parse_geonames_table_chunks(self, file_path, column_names, columns_out, dtypes, skiprows=0):
-        """This function parses a geonames table and retuns it as a pandas dataframe"""
-        file_path = os.path.join('input', 'geonames', file_path)
-        chunks = pd.read_csv(file_path, sep='\t', header=None, names=column_names, dtype=dtypes, skiprows=skiprows, engine='c', keep_default_na=False, na_values=["", "#N/A", "#N/A N/A", "#NA", "-1.#IND", "-1.#QNAN", "-NaN", "-nan", "1.#IND", "1.#QNAN", "N/A", "NULL", "NaN", "nan"], quoting=csv.QUOTE_NONE, usecols=columns_out, chunksize=10000)
-        return chunks, file_path
 
     def create_continent_table(self):
         """This function reads the continents shapefile and commits it to PostgreSQL"""
@@ -457,22 +450,6 @@ class Preprocess():
                 template="(%s, %s, %s, %s, %s, %s)"
             )
 
-            pg.conn.commit()
-
-    def find_time_zones(self):
-        """
-        1. Find time zone for each country / adm1 area for countries with multiple time zones
-        2. Match adm1 zones and cities to time zones
-        """
-        if not pg.column_exists('locations', 'time_zone'):
-            print("Matching locations with time_zones")
-            pg.cur.execute("""ALTER TABLE locations ADD COLUMN time_zone VARCHAR(40)""")
-            pg.cur.execute("""
-                UPDATE locations
-                SET time_zone = time_zones.name
-                FROM time_zones
-                WHERE ST_Within(locations.geom, time_zones.geom)
-            """)
             pg.conn.commit()
 
     def get_geoname_table(self, file_path, ext, columns_in, columns_out, skiprows=0):
@@ -786,28 +763,6 @@ class Preprocess():
                 )
                 pg.conn.commit()
 
-    def create_time_zone_map(self):
-        # pg.cur.execute("DROP TABLE IF EXISTS time_zones")
-        if not pg.table_exists('time_zone_map'):
-            print("Creating time_zones map")
-            pg.cur.execute("""
-                CREATE TABLE time_zone_map (
-                    twitter_name VARCHAR(40) PRIMARY KEY,
-                    tz_name VARCHAR(40)
-                )
-            """)
-            with open(
-                'input/maps/time_zones/tz_names.csv',
-                'r'
-            ) as f:
-                reader = csv.reader(f)
-                tz_map = [(row[0], row[1]) for row in reader]
-
-            pg.execute_values(
-                """INSERT INTO time_zone_map (twitter_name, tz_name) VALUES %s""",
-                tz_map,
-            )
-
     def get_most_common_words(self):
         if not pg.table_exists('most_common_words'):
             print("Creating most common words table")
@@ -834,84 +789,6 @@ class Preprocess():
                 words,
                 page_size=10_000
             )
-            pg.conn.commit()
-
-    def create_geoms_table(self):
-        if not pg.table_exists('geoms'):
-            print("Creating geoms table")
-            pg.cur.execute("""
-                CREATE TABLE geoms (
-                    location_ID VARCHAR PRIMARY KEY,
-                    geom GEOMETRY(MULTIPOLYGON, 4326),
-                    geom_json json,
-                    centroid GEOMETRY(POINT, 4326),
-                    type VARCHAR(20)
-                )
-            """)
-
-            pg.cur.execute("""
-                INSERT INTO geoms (location_ID, geom, geom_json, type)
-                SELECT
-                    subbasins_8.id,
-                    ST_Multi(ST_SnapToGrid(subbasins_8.geom, 0.001)),
-                    ST_AsGeoJSON(ST_Multi(ST_SnapToGrid(subbasins_8.geom, 0.001)))::json,
-                    'subbasin_8'
-                FROM subbasins_8
-            """)
-
-            pg.cur.execute("""
-                INSERT INTO geoms (location_ID, geom, type)
-                SELECT
-                    regions.location_ID,
-                    ST_Multi(regions.geom),
-                    regions.level::VARCHAR
-                FROM regions
-            """)
-
-            pg.cur.execute("""
-                WITH centroids AS (
-                  WITH geom_centroids AS (
-                      SELECT location_ID, (ST_dump(geom)).geom AS geom
-                      FROM geoms
-                  )
-                  SELECT DISTINCT ON (location_ID) location_ID, ST_Centroid(geom) AS geom
-                  FROM geom_centroids
-                  ORDER BY location_ID ASC, ST_Area(geom) DESC
-                )
-                UPDATE geoms
-                SET centroid = centroids.geom
-                FROM centroids
-                WHERE geoms.location_ID = centroids.location_ID
-            """)
-
-            pg.conn.commit()
-
-    def find_population(self, table):
-        if not pg.column_exists(table, 'population'):
-            print(f"Finding population for table: {table}")
-            pg.cur.execute(f"""
-                ALTER TABLE {table}
-                ADD COLUMN population BIGINT
-            """)
-
-            pg.cur.execute(f"""
-                WITH upd AS (
-                    SELECT
-                        id,
-                        SUM((ST_SummaryStats(ST_Clip(rast, geom))).sum) AS population
-                FROM population, {table}
-                    WHERE ST_Intersects(geom, rast)
-                    GROUP BY id
-                )
-                UPDATE {table}
-                SET population = upd.population
-                FROM upd
-                WHERE upd.id = {table}.id
-            """)
-
-            pg.cur.execute(f"""
-                SELECT * FROM {table} WHERE population IS NOT NULL
-            """)
             pg.conn.commit()
 
     def assign_region_levels(self):
@@ -941,6 +818,26 @@ class Preprocess():
             """, (LEVEL_2_COUNTRIES, LEVEL_2_COUNTRIES))
             pg.conn.commit()
 
+    def create_simple_geoms(self):
+        if not pg.table_exists('simple_geoms'):
+            print("Creating simple_geoms table")
+            pg.cur.execute(f"""
+                CREATE TABLE simple_geoms (
+                    location_ID VARCHAR PRIMARY KEY,
+                    geom VARCHAR,
+                    level INT
+                )
+            """)
+
+            pg.cur.execute("""
+                INSERT INTO simple_geoms (location_ID, geom, level)
+                SELECT location_ID, ST_AsGeoJSON(geom), region_level
+                FROM locations
+                WHERE region_level IN (0, 1)
+            """)
+
+            pg.conn.commit()
+
 
 def run():
     p = Preprocess()
@@ -953,6 +850,7 @@ def run():
     p.fill_alternate_names_table_geonames()
     p.find_hierarchy()
     p.assign_region_levels()
+    p.create_simple_geoms()
     p.index_toponyms()
 
 

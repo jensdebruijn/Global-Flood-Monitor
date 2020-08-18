@@ -30,6 +30,7 @@ def create_input_feature(tokenizer, output_mode, example, max_length, mask_paddi
         example.text_a,
         example.text_b,
         add_special_tokens=True,
+        truncation=True,
         max_length=max_length,
         truncation_strategy='only_first'  # We're truncating the first sequence in priority
     )

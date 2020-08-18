@@ -880,5 +880,4 @@ class DocAnalyzer:
             text=analyzed_doc.text,
             clean_text=clean_text,
             language=analyzed_doc.language,
-            repost=analyzed_doc.repost
         )

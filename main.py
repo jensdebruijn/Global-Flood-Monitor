@@ -87,6 +87,7 @@ class Detection(Geoparser):
         self,
         doc_loader,
         n_words,
+        classify_tweets,
         minimum_gram_length,
         max_distance_entities_doc,
         doc_score_types,
@@ -95,11 +96,13 @@ class Detection(Geoparser):
         and if the event detection module is turned on, initalize the class
         for that (spinup)"""
         self.n_words = n_words
+        self.classify_tweets = classify_tweets
         self.es = Elastic(host=ELASTIC_HOST)
         self.check_toponym_index()
         self.pg = PostgreSQL('gfm')
         super().__init__(self.pg, self.es, doc_score_types, max_distance_entities_doc)
-        self.text_classifier = TextClassifier()
+        if self.classify_tweets == 'bert':
+            self.text_classifier = TextClassifier()
         self.docs = {}
         doc_loader_args = (
             doc_score_types,
@@ -261,66 +264,81 @@ class Detection(Geoparser):
                 unloaded_docs.append(docs_queue.get())
                 n_docs_to_unload.decrease()
 
-            about_ongoing_event_docs = []
-            about_ongoing_event_doc_ids = set()
-            classified_docs = set()
-            
-            IDs = [ID for ID, _ in unloaded_docs]
-            if IDs:
-                documents = self.es.mget(index=DOCUMENT_INDEX, body={'ids': IDs})['docs']
+            if self.classify_tweets == 'bert':
+                about_ongoing_event_docs = []
+                about_ongoing_event_doc_ids = set()
+                classified_docs = set()
+                
+                # Check whether documents are already classified in ES. If so, load classification from ES.
+                if unloaded_docs:
+                    documents = self.es.mget(index=DOCUMENT_INDEX, body={'ids': [ID for ID, _ in unloaded_docs]})['docs']
+                for doc in documents:
+                    doc = doc['_source']
+                    if 'event_related' in doc:
+                        classified_docs.add(doc['id'])
+                        if doc['event_related'] is True:
+                            about_ongoing_event_doc_ids.add(doc['id'])
+
+                for doc in unloaded_docs:
+                    if doc[0] in about_ongoing_event_doc_ids:
+                        about_ongoing_event_docs.append(doc)
+
+                docs_to_classify = []
+                examples_to_classify = []
+                for doc in unloaded_docs:
+                    ID, doc_info = doc
+                    if ID not in classified_docs:
+                        example = {
+                            'id': ID,
+                            'sentence1': doc_info.clean_text,
+                            'label': 0
+                        }
+                        examples_to_classify.append(example)
+                        docs_to_classify.append(doc)
+
+                classes = self.text_classifier(examples_to_classify)
+
+                assert len(classes) == len(docs_to_classify)
+                es_update = []
+                for doc_class, doc in zip(classes, docs_to_classify):
+                    doc_class = True if doc_class == 'yes' else False
+                    if doc_class is True:
+                        about_ongoing_event_docs.append(doc)
+                    es_update.append({
+                        'doc': {
+                            'event_related': doc_class
+                        },
+                        '_index': DOCUMENT_INDEX,
+                        '_id': doc[0],
+                        '_op_type': 'update',
+                    })
+
+                self.es.bulk_operation(es_update)
+
+                about_ongoing_event_docs = sorted(
+                    about_ongoing_event_docs,
+                    key=lambda x: x[1].date,
+                    reverse=False
+                )
+                
+                self.docs.update(dict(about_ongoing_event_docs))
+            elif self.classify_tweets == 'db':
+                # Check whether documents are already classified in ES. If so, load classification from ES.
+                about_ongoing_event_docs = []
+                if unloaded_docs:
+                    documents = self.es.mget(index=DOCUMENT_INDEX, body={'ids': [ID for ID, _ in unloaded_docs]})['docs']
+                    for doc in documents:
+                        doc = doc['_source']
+                        if doc['event_related'] is True:
+                            about_ongoing_event_doc_ids.add(doc['id'])
+
+                    for doc in unloaded_docs:
+                        if doc[0] in about_ongoing_event_doc_ids:
+                            about_ongoing_event_docs.append(doc)
+                self.docs.update(dict(about_ongoing_event_docs))
             else:
-                documents = []
-            for doc in documents:
-                doc = doc['_source']
-                if 'event_related' in doc:
-                    classified_docs.add(doc['id'])
-                    if doc['event_related'] is True:
-                        about_ongoing_event_doc_ids.add(doc['id'])
-
-            for doc in unloaded_docs:
-                if doc[0] in about_ongoing_event_doc_ids:
-                    about_ongoing_event_docs.append(doc)
-
-            docs_to_classify = []
-            examples_to_classify = []
-            for doc in unloaded_docs:
-                ID, doc_info = doc
-                if ID not in classified_docs:
-                    example = {
-                        'id': ID,
-                        'sentence1': doc_info.clean_text,
-                        'label': 0
-                    }
-                    examples_to_classify.append(example)
-                    docs_to_classify.append(doc)
-
-            classes = self.text_classifier(examples_to_classify)
-
-            assert len(classes) == len(docs_to_classify)
-            es_update = []
-            for doc_class, doc in zip(classes, docs_to_classify):
-                doc_class = True if doc_class == 'yes' else False
-                if doc_class is True:
-                    about_ongoing_event_docs.append(doc)
-                es_update.append({
-                    'doc': {
-                        'event_related': doc_class
-                    },
-                    '_index': DOCUMENT_INDEX,
-                    '_id': doc[0],
-                    '_op_type': 'update',
-                    '_type': '_doc'
-                })
-
-            self.es.bulk_operation(es_update)
-
-            about_ongoing_event_docs = sorted(
-                about_ongoing_event_docs,
-                key=lambda x: x[1].date,
-                reverse=False
-            )
+                self.docs.update(dict(unloaded_docs))
             
-            self.docs.update(dict(about_ongoing_event_docs))
             if max_n_docs_in_memory is not None and len(self.docs) > max_n_docs_in_memory:
                 n_docs_to_delete = len(self.docs) - max_n_docs_in_memory
                 IDs_to_remove = list(self.docs.keys())[:n_docs_to_delete]
@@ -397,6 +415,7 @@ def main():
         n_words=n_words,
         minimum_gram_length=minimum_gram_length,
         max_distance_entities_doc=args.max_distance_entities_doc,
+        classify_tweets=args.classify_tweets,
         doc_score_types=DOC_SCORE_TYPES,
     )
 
@@ -424,6 +443,7 @@ if __name__ == '__main__':
     parser.add_argument('-g', '--geoparsing-start', type=valid_date, default=False)
     parser.add_argument('-ld', '--load-detectors', type=parse_bool, default=False)
     parser.add_argument('-ul', '--update-locations', type=parse_bool, default=True)
+    parser.add_argument('-ct', '--classify-tweets', type=str, default='bert')
     parser.add_argument('-re', '--regions', default='admin')
     parser.add_argument('-de', '--detection', type=parse_bool, default=True)
     parser.add_argument('-rt', '--real-time', type=parse_bool, default=True)

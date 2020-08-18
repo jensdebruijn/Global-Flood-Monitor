@@ -252,11 +252,11 @@ def locations_to_class(docs):
         yield doc
 
 
-Tweet = namedtuple("Tweet", "id text clean_text language date author_id author_location author_timezone coordinates bbox_center urls media repost")
+Tweet = namedtuple("Tweet", "id text clean_text language date author_id author_location author_timezone coordinates bbox_center urls media")
 Article = namedtuple("Article", "id text language author_id date")
 BaseDoc = namedtuple("BaseDoc", "id language author_id date text clean_text")
 
-AnalyzedDoc = namedtuple("AnalyzedDoc", "locations resolved_locations author_id date text clean_text language repost")
+AnalyzedDoc = namedtuple("AnalyzedDoc", "locations resolved_locations author_id date text clean_text language")
 
 
 if __name__ == '__main__':

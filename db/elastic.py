@@ -77,7 +77,7 @@ class Elastic(elasticsearch.Elasticsearch):
                     }
                 }
             }
-            self.indices.put_mapping(index=index, body=body, doc_type='_doc')
+            self.indices.put_mapping(index=index, body=body)
 
     def bulk_operation(
         self,
@@ -157,7 +157,7 @@ class Elastic(elasticsearch.Elasticsearch):
     def get(self, id, index=None):
         if index is None:
             index = self.index
-        res = elasticsearch.Elasticsearch.get(self, index=index, id=id, doc_type='_doc')
+        res = elasticsearch.Elasticsearch.get(self, index=index, id=id)
         if 'date' in res['_source']:
             res['_source']['date'] = isoformat_2_date(res['_source']['date'])
         return res
@@ -165,7 +165,7 @@ class Elastic(elasticsearch.Elasticsearch):
     def update(self, id, body, index=None):
         if index is None:
             index = self.index
-        return elasticsearch.Elasticsearch.update(self, index=index, body=body, doc_type='_doc', id=id)
+        return elasticsearch.Elasticsearch.update(self, index=index, body=body, id=id)
 
     def n_hits(self, body=None, index=None):
         """Retrieve number of documents for query."""
@@ -174,10 +174,9 @@ class Elastic(elasticsearch.Elasticsearch):
         return elasticsearch.Elasticsearch.search(
             self,
             index=index,
-            doc_type='_doc',
             body=body,
             size=0
-        )['hits']['total']
+        )['hits']['total']['value']
 
     def search(self, body=None, index=None, **kwargs):
         """Retrieve number of documents for query."""

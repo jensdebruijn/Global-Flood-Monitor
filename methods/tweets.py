@@ -80,7 +80,6 @@ class LastTweetsDeque(deque):
 def tweet_parser(tweet):
     post = {
         'id': 't-' + tweet['id_str'],
-        # 'id_old': 't-' + str(tweet['id']),
         'date': datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y'),
         'source': {
             'author': {
@@ -101,14 +100,12 @@ def tweet_parser(tweet):
         post['source']['url'] = urls
 
     if 'retweeted_status' in tweet:
-        try:
-            post['text'] = tweet['retweeted_status']['text']
-            post['source']['retweet'] = True
-        except KeyError:
-            return None
+        return None
+
+    if 'full_text' in tweet:
+        post['text'] = tweet['full_text']
     else:
         post['text'] = tweet['text']
-        post['source']['retweet'] = False
 
     try:
         lang = tweet['lang']
@@ -173,8 +170,7 @@ def tweet_to_namedtuple(doc):
         coordinates=tuple(doc['source']['coordinates']) if 'coordinates' in doc['source'] else None,
         bbox_center=bbox_center,
         media=doc['source']['media'] if 'media' in doc['source'] else None,
-        urls=doc['source']['urls'] if 'urls' in doc['source'] else None,
-        repost=doc['source']['retweet']
+        urls=doc['source']['urls'] if 'urls' in doc['source'] else None
     )
 
 

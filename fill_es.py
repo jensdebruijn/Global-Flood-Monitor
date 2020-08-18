@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+import gzip
 from methods import sanitize
 from datetime import datetime
 
@@ -22,34 +23,44 @@ class Fill:
             keywords[language] = set([word.strip().lower() for word in words.split(',')])
         return keywords
 
-    def generate_tweets(self, fp, start=datetime(1970, 1, 1)):
-        with open(fp, 'rb') as f:
-            for line in f.readlines():
-                if line.startswith('#'):
-                    continue
-                tweet = line.strip()
-                try:
-                    tweet = json.loads(tweet)
-                except json.decoder.JSONDecodeError:
-                    continue
-                try:
-                    language = tweet['lang']
-                except KeyError:
-                    continue
-                clean_text = sanitize.clean_text(tweet['text'], lower=False)
-                clean_text_lower = clean_text.lower()
-                try:
-                    if not any(keyword in clean_text_lower for keyword in self.keywords[language]):
+    def open(self, fp):
+        if fp.endswith('.gzip') or fp.endswith('.gz'):
+            with gzip.open(fp, 'r') as gz:
+                for tweet in gz:
+                    yield tweet.decode('utf-8')
+        elif fp.endswith('.jsonl'):
+            with open(fp, 'rb') as f:
+                for line in f.readlines():
+                    if line.startswith('#'):
                         continue
-                except KeyError:
-                    continue
-                yield tweet
+                    yield line.strip()
+        else:
+            raise NotImplementedError(f'reader for extension {fp.split(".")[-1]} not implemented')
+
+    def generate_tweets(self, fp, start=datetime(1970, 1, 1)):
+        for tweet in self.open(fp):
+            try:
+                tweet = json.loads(tweet)
+            except json.decoder.JSONDecodeError:
+                continue
+            yield tweet
 
     def prepare_doc(self, json_doc):
+        if 'limit' in json_doc:
+            return None
         doc2es = tweet_parser(json_doc)
+        if not doc2es:
+            return None
+        language = doc2es['source']['lang']
+        clean_text = sanitize.clean_text(doc2es['text'], lower=False)
+        clean_text_lower = clean_text.lower()
+        try:
+            if not any(keyword in clean_text_lower for keyword in self.keywords[language]):
+                return None
+        except KeyError:
+            return None
         doc2es['_index'] = DOCUMENT_INDEX
         doc2es['_id'] = doc2es['id']
-        doc2es['_type'] = '_doc'
         doc2es['source']['type'] = 'tweet'
         return doc2es
 

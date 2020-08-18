@@ -40,7 +40,6 @@ class Geoparser:
             '_index': DOCUMENT_INDEX,
             '_id': ID,
             '_op_type': 'update',
-            '_type': '_doc',
             'doc_as_upsert': True
         }
 

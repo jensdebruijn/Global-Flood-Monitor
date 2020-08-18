@@ -44,7 +44,7 @@ class DocLoaderES(DocLoader):
         query_start,
         query_end
     ):
-        print("Loading timestep", query_start, query_end)
+        print("Loading timestep", query_start, query_end, '-', datetime.now())
         query = es.build_date_query(query_start, query_end)
         for doc in es.scroll_through(index=DOCUMENT_INDEX, body=query, size=1000, source=False):
             doc = doc_analyzer.analyze_doc(doc)

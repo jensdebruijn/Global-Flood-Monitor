@@ -19,7 +19,7 @@ from config import DOCUMENT_INDEX, LEVEL_2_COUNTRIES
 
 TweetScores = namedtuple('doc_scores', 'event_related')
 DataPoint = namedtuple('DataPoint', 'date language text clean_text ngrams scores locations author_id')
-AnalyzedDocShort = namedtuple("AnalyzedDocShort", "resolved_locations date language text clean_text scores repost author_id")
+AnalyzedDocShort = namedtuple("AnalyzedDocShort", "resolved_locations date language text clean_text scores author_id")
 
 
 class EventDetector:
@@ -405,7 +405,6 @@ class EventDetector:
                 text=doc['text'],
                 clean_text=clean_text(doc['text']),
                 scores=doc['scores'] if 'scores' in doc else None,
-                repost=doc['source']['retweet'],
                 author_id=doc['source']['author']['id']
             )
         except KeyError:
@@ -452,7 +451,7 @@ class EventDetector:
         location is available. If so, the doc is passed on to the
         function that actually sends the docs to the detecor
         """
-        if doc.resolved_locations and doc.repost is False:
+        if doc.resolved_locations:
             return self.send_doc_to_detector(
                 doc,
                 detectors,
