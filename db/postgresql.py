@@ -19,7 +19,6 @@ class PostgreSQL:
         self.set_pg_init()
         self.initialize_postgis()
         self.initialize_intarray()
-        self.create_aggregates()
 
     def set_pg_init(self):
         self.cur.execute("""SET work_mem TO '256MB';""")
@@ -119,18 +118,6 @@ class PostgreSQL:
 
     def initialize_intarray(self):
         self.cur.execute('CREATE EXTENSION IF NOT EXISTS intarray')
-        self.conn.commit()
-
-    def create_aggregates(self):
-        self.cur.execute("""DROP AGGREGATE IF EXISTS array_accum(anyelement)""")
-        self.cur.execute("""
-            CREATE AGGREGATE array_accum(anyelement)
-            (
-                sfunc = array_append,
-                stype = anyarray,
-                initcond = '{}'
-            )
-        """)
         self.conn.commit()
 
     def get_columns(self, table):
