@@ -412,6 +412,7 @@ class Preprocess():
             """)
 
             features = self.get_geoname_table('countryInfo', 'txt', ['ISO2', 'ISO3', 'ISO-Numeric', 'FIPS', 'Country', 'Capital', 'Area', 'Population', 'Continent', 'tld', 'pg.currencyCode', 'pg.currencyName', 'Phone', 'Postal Code Format', 'Postal Code Regex', 'Languages', 'location_ID', 'neighbours', 'EquivalentFipsCode'], ['location_ID', 'ISO2', 'ISO3', 'Continent', 'Languages', 'Country'], skiprows=51)
+            features = features.dropna(axis=0, subset=['location_ID'])
             features['Country'] = features.Country.str.lower()
             features['location_ID'] = 'g-' + features['location_ID'].astype('str')
 
