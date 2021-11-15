@@ -29,7 +29,7 @@ class Fill:
                 for tweet in gz:
                     yield tweet.decode('utf-8')
         elif fp.endswith('.jsonl'):
-            with open(fp, 'rb') as f:
+            with open(fp, 'r', encoding='utf-8') as f:
                 for line in f.readlines():
                     if line.startswith('#'):
                         continue
