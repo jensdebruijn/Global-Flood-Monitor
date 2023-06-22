@@ -12,9 +12,7 @@ from methods.dates import daterange, isoformat_2_date
 
 from geoparser import Geoparser
 from event_detector import EventDetector
-from classifier.predict import Predictor as TextClassifier
 
-from db import remove_elasticsearch_fields
 from db.elastic import Elastic
 from db.postgresql import PostgreSQL
 
@@ -27,7 +25,6 @@ minimum_gram_length = 4
 if sys.version_info < (3, 6):
     print("This application requires python 3.6+")
     sys.exit(1)
-
 
 def parse_bool(s):
     if s.lower() in ('yes', 'y', 'true'):
@@ -102,6 +99,7 @@ class Detection(Geoparser):
         self.pg = PostgreSQL('gfm')
         super().__init__(self.pg, self.es, doc_score_types, max_distance_entities_doc)
         if self.classify_tweets == 'bert':
+            from classifier.predict import Predictor as TextClassifier
             self.text_classifier = TextClassifier()
         self.docs = {}
         doc_loader_args = (
@@ -113,7 +111,7 @@ class Detection(Geoparser):
         self.doc_loader = DocLoaderES(*doc_loader_args)
 
     def check_toponym_index(self):
-        if not self.es.indices.exists("locations"):
+        if not self.es.indices.exists(index="locations"):
             print("Toponym index does not exist")
             sys.exit()
 

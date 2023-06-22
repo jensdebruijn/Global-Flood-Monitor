@@ -19,25 +19,29 @@ class Elastic(elasticsearch.Elasticsearch):
     def __init__(
         self,
         host=None,
-        port=None
+        port=None,
+        *args,
+        **kwargs
     ):
         """Initialize the connection and retrieve negative keywords."""
         if ELASTIC_USER:
             super().__init__(
                 [{
                     'host': host or ELASTIC_HOST,
-                    'port': port or ELASTIC_PORT
+                    'port': port or ELASTIC_PORT,
+                    'scheme': 'http'
                 }],
                 http_auth=(ELASTIC_USER, ELASTIC_PASSWORD),
-                timeout=30, max_retries=10, retry_on_timeout=True
+                timeout=30, max_retries=10, retry_on_timeout=True, *args, **kwargs
             )
         else:
             super().__init__(
                 [{
                     'host': host or ELASTIC_HOST,
-                    'port': port or ELASTIC_PORT
+                    'port': port or ELASTIC_PORT,
+                    'scheme': 'http'
                 }],
-                timeout=30, max_retries=10, retry_on_timeout=True
+                timeout=30, max_retries=10, retry_on_timeout=True, *args, **kwargs
             )
         tracer = logging.getLogger('elasticsearch')
         tracer.setLevel(logging.CRITICAL)
@@ -52,12 +56,13 @@ class Elastic(elasticsearch.Elasticsearch):
         }) > 0
 
     def maybe_create_document_index(self, index, score_types):
-        if not self.indices.exists(index):
+        if not self.indices.exists(index=index):
             with open('input/es_documents_index_settings.json', 'r') as f:
                 es_documents_index_settings = json.load(f)
             self.indices.create(
-                index,
-                es_documents_index_settings
+                index=index,
+                settings=es_documents_index_settings['settings'],
+                mappings=es_documents_index_settings['mappings']
             )
             print(f"Created index {index}")
 
@@ -342,6 +347,7 @@ class Elastic(elasticsearch.Elasticsearch):
         filter_subbasins_8=False,
         source=False,
         filter_classes=False,
+        sort='asc'
     ):
         """Create a query without date paramters with or without locations."""
         if not locations and not (filter_countries or filter_within_adm1 or filter_additional_relations or filter_within_countries or filter_subbasins_6 or filter_subbasins_8):
@@ -429,9 +435,10 @@ class Elastic(elasticsearch.Elasticsearch):
                 "bool": bool_query
             }
         }
+        assert sort in ['asc', 'desc'], "Sort must be either 'asc' or 'desc'"
         query.update({
             "sort": [
-                {"date": {"order": "asc"}}
+                {"date": {"order": sort}}
             ]})
         if source:
             query.update({

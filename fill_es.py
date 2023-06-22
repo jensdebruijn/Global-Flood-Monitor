@@ -6,7 +6,7 @@ from methods import sanitize
 from datetime import datetime
 
 from config import DOCUMENT_INDEX
-from methods.tweets import tweet_parser, tweet_to_namedtuple
+from methods.tweets import tweet_parser
 from db.elastic import Elastic
 
 
@@ -19,15 +19,19 @@ class Fill:
         df = pd.read_excel('input/twitter_supported_languages.xlsx')
         df = df[df['implemented'] == True].set_index('language_code')['floods_filtered']
         keywords = {}
-        for language, words in df.iteritems():
+        for language, words in df.items():
             keywords[language] = set([word.strip().lower() for word in words.split(',')])
         return keywords
 
     def open(self, fp):
         if fp.endswith('.gzip') or fp.endswith('.gz'):
             with gzip.open(fp, 'r') as gz:
-                for tweet in gz:
-                    yield tweet.decode('utf-8')
+                try:
+                    for tweet in gz:
+                        yield tweet.decode('utf-8')
+                except EOFError:
+                    print('EOFError')
+                    pass
         elif fp.endswith('.jsonl'):
             with open(fp, 'r', encoding='utf-8') as f:
                 for line in f.readlines():

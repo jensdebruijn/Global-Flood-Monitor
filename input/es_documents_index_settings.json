@@ -97,27 +97,6 @@
       },
       "locations": {
         "properties": {
-          "additional_relations": {
-            "type": "keyword"
-          },
-          "subbasin_ids_6": {
-            "type": "keyword"
-          },
-          "subbasin_ids_8": {
-            "type": "keyword"
-          },
-          "subbasin_ids_9": {
-            "type": "keyword"
-          },
-          "subbasin_ids_10": {
-            "type": "keyword"
-          },
-          "subbasin_ids_11": {
-            "type": "keyword"
-          },
-          "subbasin_ids_12": {
-            "type": "keyword"
-          },
           "coordinates": {
             "type": "float"
           },

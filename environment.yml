@@ -1,0 +1,23 @@
+# conda env create -f environment.yml
+name: gfm
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pandas
+  - elasticsearch
+  - psycopg2
+  - numpy
+  - dill
+  - scikit-learn
+  - pytz
+  - gdal
+  - nltk
+  - geopy
+  - xlrd
+  - geopandas
+  - openpyxl
+  - pip
+  - pip:
+    - TwitterAPI
